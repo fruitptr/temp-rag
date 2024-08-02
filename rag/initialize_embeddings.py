@@ -6,6 +6,10 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.docstore.document import Document
 import fitz  # PyMuPDF for handling PDF files
 
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 load_dotenv()
 
 # Define the directory containing the PDF files and the persistent directory

@@ -18,3 +18,4 @@ pymupdf==1.24.7
 fastapi==0.111.1
 pydantic==2.8.2
 uvicorn==0.30.3
+pysqlite3-binary
