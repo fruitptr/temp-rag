@@ -5,6 +5,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import json
 
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 def one_off(filename, difficulty, noOfQuestions, quizType):
    
 # Load environment variables from .env
