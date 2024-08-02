@@ -15,7 +15,7 @@ langchainhub==0.1.18
 wikipedia==1.4.0
 tavily-python==0.3.3
 pymupdf==1.24.7
-fastapi==0.111.1
+fastapi==0.85.1
 pydantic==2.8.2
 uvicorn==0.30.3
 pysqlite3-binary
