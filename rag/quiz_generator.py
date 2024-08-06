@@ -91,7 +91,24 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
         }
         }'''
 
-    elif quizType == 'Mixed':
+    elif quizType == 'Subjective':
+        example = '''{
+        "1": {
+            "question": "Why did World War 2 begin?",
+            "answer": "The question is subjective. Please evaluate whether the answer is correct from the context above.",
+            "type": "subjective"
+            },
+        "2": {
+            "question": "Briefly explain how the Electoral College works",
+            "answer": "The question is subjective. Please evaluate whether the answer is correct from the context above.",
+            "type": "subjective"
+            },
+        "3": {
+            ...
+            }
+        }'''
+
+    else:
         example = '''{
         "1": {
             "question": "Who is the president of the United States?",
@@ -128,24 +145,7 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
         }
         }
         
-        Include a mix of MCQ, True/False, FillInTheBlank, and Subjective questions.'''
-
-    elif quizType == 'Subjective':
-        example = '''{
-        "1": {
-            "question": "Why did World War 2 begin?",
-            "answer": "The question is subjective. Please evaluate whether the answer is correct from the context above.",
-            "type": "subjective"
-            },
-        "2": {
-            "question": "Briefly explain how the Electoral College works",
-            "answer": "The question is subjective. Please evaluate whether the answer is correct from the context above.",
-            "type": "subjective"
-            },
-        "3": {
-            ...
-            }
-        }'''
+        Include a mix of {quizType} questions only.'''
     # Retrieve relevant documents based on the query
     retriever = db.as_retriever(
         search_type="similarity",
@@ -164,7 +164,7 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
     combined_input = (
         "You are a knowledgeable assistant. Your task is to generate a quiz by using information only provided in the context below. "
         "Don't use information from external sources. Make sure the difficulty of the quiz is {difficulty} and there are a total of {noOfQuestions} questions. "
-        "The type of quiz is {quizType}. The context is provided below:\n\n"
+        "Please include questions of only the quiz type(s): {quizType}. The context is provided below:\n\n"
         "{context}\n\n"
         "You must output the result in a JSON format. An example output is provided below. Don't return anything other than the JSON.\n\n"
         "{example}"
