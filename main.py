@@ -54,8 +54,8 @@ def chat(request: ChatRequest):
 
 class EvaluateRequest(BaseModel):
     fileName: str
-    originalQuizJson: dict
-    userAnswerQuizJson: dict
+    originalQuizJson: str
+    userAnswerQuizJson: str
 
 def get_context_from_chroma(filename, originalQuizJson):
     # Implement the function to get context from Chroma
