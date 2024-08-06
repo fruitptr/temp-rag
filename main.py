@@ -130,7 +130,11 @@ def evaluate_quiz(request: EvaluateRequest):
                 "userAnswer": "The war began when Nazi Germany invaded Poland in 1923 and raged across the globe until 1945",
                 "isCorrect": false
             }}
-        }}"""
+        }}
+        
+        Only output the JSON, nothing else.
+
+        """
 
         result_json = query_llm(prompt)
         # result_json = json.loads(result_json.content[0])
