@@ -137,6 +137,7 @@ def evaluate_quiz(request: EvaluateRequest):
         """
 
         result_json = query_llm(prompt)
+        print(result_json.content)
         # result_json = json.loads(result_json.content[0])
         return {"response: ": json.loads(result_json.content)}
     except Exception as e:
