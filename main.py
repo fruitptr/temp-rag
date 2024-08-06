@@ -134,7 +134,7 @@ def evaluate_quiz(request: EvaluateRequest):
             }}
         }}
         
-        Only output the JSON, nothing else.
+        Only output the JSON, nothing else. Don't add any extra text before or after the JSON. 
 
         """
 
