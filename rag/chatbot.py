@@ -70,16 +70,17 @@ def initialize_chatbot(filename):
     qa_system_prompt = (
         """You are a helpful assistant. Use the following pieces of retrieved context to answer the question. Don't use 
         information other than the retrieved context. Make sure to answer the question in a way that the user doesn't gets confused.
-        Your job is to be as helpful as possible. If you don't know the answer, just say that "I could not find a relevant
-        answer in the selected PDF. Can you rephrase the question please?"."
+        Your job is to be as helpful as possible. If relevant documents are not found or if the answer is not available in the
+        retrieved context, just say that "I could not find a relevant answer in the selected PDF. Can you rephrase the question
+        please?"."
         "{context}"
 
-        "Give response like this: "
+        Give response like this: 
         "===Normal Answer==="
-        "[Provide the normal answer here.]"
+        [Provide the normal answer here.]
 
-        "===Explain to a 5-year-old==="
-        "[Explain the answer in simple terms here.]"""
+        ===Explain to a 5-year-old===
+        [Explain the answer in simple terms here.]"""
     )
 
     # Create a prompt template for answering questions
