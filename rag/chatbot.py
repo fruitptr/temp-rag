@@ -37,11 +37,11 @@ def initialize_chatbot(filename):
     # Create a retriever for querying the vector store
     retriever = db.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 2},
+        search_kwargs={"k": 4},
     )
 
     # Create a ChatOpenAI model
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
 
     # Contextualize question prompt
     contextualize_q_system_prompt = (
@@ -68,16 +68,18 @@ def initialize_chatbot(filename):
 
     # Answer question prompt
     qa_system_prompt = (
-        "You are a helpful assistant. Use the following pieces of retrieved context to answer the question. Don't use information other than the retrieved context. If you don't know the answer, just say that I'm 1 month old right now, as I grow older, I will learn more and more. Can you please keep the questions easy? Keep the answer concise."
+        """You are a helpful assistant. Use the following pieces of retrieved context to answer the question. Don't use 
+        information other than the retrieved context. Make sure to answer the question in a way that the user doesn't gets confused.
+        Your job is to be as helpful as possible. If you don't know the answer, just say that "I could not find a relevant
+        answer in the selected PDF. Can you rephrase the question please?"."
         "{context}"
-
 
         "Give response like this: "
         "===Normal Answer==="
         "[Provide the normal answer here.]"
 
         "===Explain to a 5-year-old==="
-        "[Explain the answer in simple terms here.]"
+        "[Explain the answer in simple terms here.]"""
     )
 
     # Create a prompt template for answering questions
