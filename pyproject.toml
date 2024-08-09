@@ -26,6 +26,9 @@ pymupdf = "^1.24.7"
 fastapi = "^0.111.1"
 pydantic = "^2.8.2"
 uvicorn = "^0.30.3"
+assemblyai = "^0.31.0"
+pytube = "^15.0.0"
+pytubefix = "^6.9.2"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

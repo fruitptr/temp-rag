@@ -9,34 +9,44 @@ __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-def one_off(filename, difficulty, noOfQuestions, quizType):
-   
-# Load environment variables from .env
+def one_off(filename=None, text=None, difficulty=None, noOfQuestions=None, quizType=None):
     load_dotenv()
 
     # Define the base directory and persistent directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
     db_dir = os.path.join(current_dir, "db", "chroma_db_with_metadata")
 
-    # Define the filename to search for
-    # filename = "story.pdf"  # Replace with the actual filename from the request
-    file_specific_directory = os.path.join(db_dir, filename.replace(".pdf", ""))
+    context = ""
+    
+    if filename:
+        # Load the specific vector store for the given file
+        file_specific_directory = os.path.join(db_dir, filename.replace(".pdf", ""))
+        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    # Define the embedding model
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        if os.path.exists(file_specific_directory):
+            print(f"Loading vector store for {filename}...")
+            db = Chroma(persist_directory=file_specific_directory, embedding_function=embeddings)
+        else:
+            raise FileNotFoundError(f"The vector store for {filename} does not exist.")
+        
+        # Retrieve relevant documents based on the query
+        retriever = db.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 1},
+        )
+        query = "Create a quiz from the story"  # The actual content isn't as important here
+        relevant_docs = retriever.invoke(query)
+        
+        # Build the context from retrieved documents
+        context = "\n\n".join([f"Page {doc.metadata.get('page', 'Unknown')}:\n{doc.page_content}" for doc in relevant_docs])
 
-    # Load the specific vector store for the given file
-    if os.path.exists(file_specific_directory):
-        print(f"Loading vector store for {filename}...")
-        db = Chroma(persist_directory=file_specific_directory, embedding_function=embeddings)
+    elif text:
+        context = text  # Use the provided text as context
+
     else:
-        raise FileNotFoundError(f"The vector store for {filename} does not exist.")
-
-    # Define the user's question parameters
-    # difficulty = "hard"
-    # noOfQuestions = 5
-    # quizType = "FillInTheBlank"
-
+        raise ValueError("Either filename or text must be provided.")
+    
+    # Determine the example template based on the quiz type
     if quizType == 'MCQ':
         example = '''{
     "1": {
@@ -54,7 +64,6 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
         ...
     }
     }'''
-
     elif quizType == 'True/False':
         example = '''{
         "1": {
@@ -76,7 +85,6 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
             "type": "mcq"
         }
         }'''
-
     elif quizType == 'FillInTheBlank':
         example = '''{
         "1": {
@@ -90,7 +98,6 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
             "type": "blanks"
         }
         }'''
-
     elif quizType == 'Subjective':
         example = '''{
         "1": {
@@ -107,7 +114,6 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
             ...
             }
         }'''
-
     else:
         example = '''{
         "1": {
@@ -143,24 +149,9 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
         "5": {
             ...
         }
-        }
-        
-        Include a mix of {quizType} questions only.'''
-    # Retrieve relevant documents based on the query
-    retriever = db.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 1},
-    )
-    query = "Create a quiz from the story"  # The actual content isn't as important here
-    relevant_docs = retriever.invoke(query)
-
-    # Display the relevant results with metadata
-    print("\n--- Relevant Documents ---")
-    for i, doc in enumerate(relevant_docs, 1):
-        page_number = doc.metadata.get("page", "Unknown")  # Get the page number from metadata
-        print(f"Document {i} (Page {page_number}):\n{doc.page_content}\n")
-
-    # Combine the query and the relevant document contents into the quiz generation prompt
+        }'''
+    
+    # Combine the query and the relevant document contents or provided text into the quiz generation prompt
     combined_input = (
         "You are a knowledgeable assistant. Your task is to generate a quiz by using information only provided in the context below. "
         "Don't use information from external sources. Make sure the difficulty of the quiz is {difficulty} and there are a total of {noOfQuestions} questions. "
@@ -172,10 +163,12 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
         difficulty=difficulty,
         noOfQuestions=noOfQuestions,
         quizType=quizType,
-        context="\n\n".join([f"Page {doc.metadata.get('page', 'Unknown')}:\n{doc.page_content}" for doc in relevant_docs]),
+        context=context,
         example=example
     )
 
+    print("Prompt:", combined_input)
+    
     # Create a ChatOpenAI model
     model = ChatOpenAI(model="gpt-4o")
 
@@ -187,10 +180,6 @@ def one_off(filename, difficulty, noOfQuestions, quizType):
 
     # Invoke the model with the combined input
     result = model.invoke(messages)
-
-    # Display the full result and content only
-    # print("\n--- Generated Response ---")
-    print(result.content)
 
     try:
         quiz_json = json.loads(result.content)

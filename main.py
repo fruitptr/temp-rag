@@ -1,14 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rag.quiz_generator import one_off
 from rag.chatbot import continual_chat
+from rag.transcribe_video import transcribe_video
+from rag.link_chatbot import link_chatbot
+from rag.storyteller import storyteller
 import os
+from typing import Optional
 import json
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage
+from openai import OpenAI
 
 __import__('pysqlite3')
 import sys
@@ -25,8 +30,11 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+chat_histories = {}
+
 class QuizRequest(BaseModel):
-    filename: str
+    filename: Optional[str] = None
+    text: Optional[str] = None
     difficulty: str
     noOfQuestions: int
     quizType: str
@@ -34,26 +42,50 @@ class QuizRequest(BaseModel):
 @app.post("/generate-quiz")
 def generate_quiz(request: QuizRequest):
     try:
-        result = one_off(request.filename, request.difficulty, request.noOfQuestions, request.quizType)
+        result = one_off(request.filename, request.text, request.difficulty, request.noOfQuestions, request.quizType)
         return {"response": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 class ChatRequest(BaseModel):
     query: str
-    filename: str
+    filename: Optional[str] = None
+    text: Optional[str] = None
+    session_id: Optional[str] = None
 
 @app.post("/chat")
 def chat(request: ChatRequest):
     try:
-        print(request.query)
-        response = continual_chat(request.query, request.filename)
-        return {"response": response}
+        if request.filename:
+            session_id = request.session_id
+            # Retrieve existing chat history or start a new one
+            chat_history = chat_histories.get(session_id, [])
+
+            # Process the query with the current chat history
+            normal_answer, source, explanation_for_5_year_old, updated_chat_history = (
+                continual_chat(request.query, request.filename, chat_history)
+            )
+
+            # Update the global chat history
+            chat_histories[session_id] = updated_chat_history
+
+            return {
+                "response": normal_answer,
+                "source": source.metadata,
+                "explanation_for_5_year_old": explanation_for_5_year_old,
+                "chat_history": updated_chat_history
+            }
+        else:
+            normal_answer, explanation_for_5_year_old = link_chatbot(request.text, request.query)
+            return {
+                "response": normal_answer,
+                "explanation_for_5_year_old": explanation_for_5_year_old
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 class EvaluateRequest(BaseModel):
-    fileName: str
+    filename: str
     originalQuizJson: dict
     userAnswerQuizJson: dict
 
@@ -110,7 +142,7 @@ def query_llm(prompt):
 @app.post('/evaluate')
 def evaluate_quiz(request: EvaluateRequest):
     try:
-        context = get_context_from_chroma(request.fileName, request.originalQuizJson)
+        context = get_context_from_chroma(request.filename, request.originalQuizJson)
         
         prompt = f"""
         Context: {context}
@@ -141,9 +173,69 @@ def evaluate_quiz(request: EvaluateRequest):
         result_json = query_llm(prompt)
         print("RESULT JSON CONTENT", result_json.content)
         # result_json = json.loads(result_json.content[0])
-        return {"response: ": json.loads(result_json.content)}
+        return {"response": json.loads(result_json.content)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class VideoToTextRequest(BaseModel):
+    youtubelink: str
+
+@app.post("/video-to-text")
+def video_to_text(request: VideoToTextRequest):
+    try:
+        response = transcribe_video(request.youtubelink)
+        return {"response": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/audio-to-text")
+async def audio_to_text(file: UploadFile = File(...)):
+    try:
+        # Read the audio file
+        audio_file = await file.read()
+        audio_path = os.path.join(os.getcwd(), file.filename)
+
+        # Save the audio file temporarily
+        with open(audio_path, "wb") as f:
+            f.write(audio_file)
+
+        # Use OpenAI to transcribe the audio
+        client = OpenAI()
+        with open(audio_path, "rb") as audio:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio
+            )
+        
+        # Delete the temporary audio file after processing
+        os.remove(audio_path)
+        
+        return {"transcript": transcript.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+class StoryRequest(BaseModel):
+    characterList: list
+    plot: str
+    categoryList: list
+    languageCode: str
+    isRandom: bool
+
+
+@app.post("/generate-story")
+def generate_story(request: StoryRequest):
+    try:
+        result = storyteller(
+            request.characterList,
+            request.plot,
+            request.categoryList,
+            request.languageCode,
+            request.isRandom,
+        )
+        return {"response": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
