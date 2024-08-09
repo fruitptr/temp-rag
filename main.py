@@ -10,9 +10,9 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage
 
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 
 app = FastAPI()
@@ -24,6 +24,8 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+chat_histories = {}
 
 class QuizRequest(BaseModel):
     filename: str
@@ -42,15 +44,31 @@ def generate_quiz(request: QuizRequest):
 class ChatRequest(BaseModel):
     query: str
     filename: str
+    session_id: str  # A unique identifier for the session
+
 
 @app.post("/chat")
 def chat(request: ChatRequest):
     try:
-        print(request.query)
-        response = continual_chat(request.query, request.filename)
-        return {"response": response}
+        session_id = request.session_id
+        # Retrieve existing chat history or start a new one
+        chat_history = chat_histories.get(session_id, [])
+        
+        # Process the query with the current chat history
+        normal_answer, source, explanation_for_5_year_old, updated_chat_history = continual_chat(request.query, request.filename, chat_history)
+
+        # Update the global chat history
+        chat_histories[session_id] = updated_chat_history
+        
+        return {
+            "response": normal_answer,
+            "source": source.metadata,
+            "explanation_for_5_year_old": explanation_for_5_year_old,
+            "chat_history": updated_chat_history  # Optionally return the chat history
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class EvaluateRequest(BaseModel):
     fileName: str

@@ -6,9 +6,9 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.docstore.document import Document
 import fitz  # PyMuPDF for handling PDF files
 
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 load_dotenv()
 
@@ -62,7 +62,7 @@ for dataset_file in dataset_files:
         continue
 
     # Split the documents into chunks
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     docs = text_splitter.split_documents(documents)
 
     # Display information about the split documents

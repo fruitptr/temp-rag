@@ -7,9 +7,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 # Load environment variables from .env
 
@@ -104,9 +104,8 @@ def process_query(query, chat_history, rag_chain):
     return result["answer"]
 
 # Function to simulate a continual chat
-def continual_chat(query, filename):
+def continual_chat(query, filename, chat_history):
     rag_chain, retriever = initialize_chatbot(filename)
-    chat_history = []  # Collect chat history here (a sequence of messages)
     # Process the user's query through the retrieval chain
     source = retriever.invoke(query)
     result = process_query(query, chat_history, rag_chain)
@@ -115,6 +114,7 @@ def continual_chat(query, filename):
     # Update the chat history
     chat_history.append(HumanMessage(content=query))
     chat_history.append(SystemMessage(content=result))
+    print(f"Chat History: {chat_history}")
     print(source[0].page_content)
     # payload = [result, source[0]]
     # return payload
@@ -133,4 +133,4 @@ def continual_chat(query, filename):
     print("Normal Answer:\n", normal_answer)
     print("\nExplain to a 5-year-old:\n", explanation_for_5_year_old)
 
-    return normal_answer, source[0], explanation_for_5_year_old
+    return normal_answer, source[0], explanation_for_5_year_old, chat_history
