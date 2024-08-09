@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage
+from rag.storyteller import storyteller
 
 # __import__('pysqlite3')
 # import sys
@@ -27,19 +28,50 @@ app.add_middleware(
 
 chat_histories = {}
 
+
+class StoryRequest(BaseModel):
+    characterList: list
+    plot: str
+    categoryList: list
+    languageCode: str
+    isRandom: bool
+
+
+@app.post("/generate-story")
+def generate_story(request: StoryRequest):
+    try:
+        result = storyteller(
+            request.characterList,
+            request.plot,
+            request.categoryList,
+            request.languageCode,
+            request.isRandom,
+        )
+        return {"response": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class QuizRequest(BaseModel):
     filename: str
     difficulty: str
     noOfQuestions: int
     quizType: str
 
+
 @app.post("/generate-quiz")
 def generate_quiz(request: QuizRequest):
     try:
-        result = one_off(request.filename, request.difficulty, request.noOfQuestions, request.quizType)
+        result = one_off(
+            request.filename,
+            request.difficulty,
+            request.noOfQuestions,
+            request.quizType,
+        )
         return {"response": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class ChatRequest(BaseModel):
     query: str
@@ -53,18 +85,20 @@ def chat(request: ChatRequest):
         session_id = request.session_id
         # Retrieve existing chat history or start a new one
         chat_history = chat_histories.get(session_id, [])
-        
+
         # Process the query with the current chat history
-        normal_answer, source, explanation_for_5_year_old, updated_chat_history = continual_chat(request.query, request.filename, chat_history)
+        normal_answer, source, explanation_for_5_year_old, updated_chat_history = (
+            continual_chat(request.query, request.filename, chat_history)
+        )
 
         # Update the global chat history
         chat_histories[session_id] = updated_chat_history
-        
+
         return {
             "response": normal_answer,
             "source": source.metadata,
             "explanation_for_5_year_old": explanation_for_5_year_old,
-            "chat_history": updated_chat_history  # Optionally return the chat history
+            "chat_history": updated_chat_history,  # Optionally return the chat history
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -74,6 +108,7 @@ class EvaluateRequest(BaseModel):
     fileName: str
     originalQuizJson: dict
     userAnswerQuizJson: dict
+
 
 def get_context_from_chroma(filename, originalQuizJson):
     # Implement the function to get context from Chroma
@@ -95,7 +130,9 @@ def get_context_from_chroma(filename, originalQuizJson):
     if os.path.exists(file_specific_directory):
         print("File exists")
         print(f"Loading vector store for {filename}...")
-        db = Chroma(persist_directory=file_specific_directory, embedding_function=embeddings)
+        db = Chroma(
+            persist_directory=file_specific_directory, embedding_function=embeddings
+        )
     else:
         raise FileNotFoundError(f"The vector store for {filename} does not exist.")
 
@@ -125,11 +162,12 @@ def query_llm(prompt):
     print("AFTER INVOKING")
     return result
 
-@app.post('/evaluate')
+
+@app.post("/evaluate")
 def evaluate_quiz(request: EvaluateRequest):
     try:
         context = get_context_from_chroma(request.fileName, request.originalQuizJson)
-        
+
         prompt = f"""
         Context: {context}
 
@@ -163,7 +201,9 @@ def evaluate_quiz(request: EvaluateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == "__main__":
     import uvicorn
-    porttoRun = os.getenv('PORT')
+
+    porttoRun = os.getenv("PORT")
     uvicorn.run(app, host="0.0.0.0", port=porttoRun)

@@ -23,7 +23,9 @@ print(f"Persistent base directory: {persistent_base_directory}")
 
 # Ensure the dataset directory exists
 if not os.path.exists(dataset_dir):
-    raise FileNotFoundError(f"The directory {dataset_dir} does not exist. Please check the path.")
+    raise FileNotFoundError(
+        f"The directory {dataset_dir} does not exist. Please check the path."
+    )
 
 # List all PDF files in the directory
 dataset_files = [f for f in os.listdir(dataset_dir) if f.endswith(".pdf")]
@@ -49,9 +51,14 @@ for dataset_file in dataset_files:
     doc = fitz.open(file_path)
     for page_num in range(doc.page_count):
         page = doc.load_page(page_num)
-        text = page.get_text('text')
+        text = page.get_text("text")
         if text.strip():  # Ensure the text is not empty
-            documents.append(Document(page_content=text, metadata={"source": dataset_file, "page": page_num}))
+            documents.append(
+                Document(
+                    page_content=text,
+                    metadata={"source": dataset_file, "page": page_num},
+                )
+            )
             print(f"Extracted text from {dataset_file}, page {page_num}:")
             # print(text[:200])  # Print the first 200 characters of the extracted text for debugging
         else:
@@ -74,6 +81,5 @@ for dataset_file in dataset_files:
 
     # Create the vector store and persist it
     print("\n--- Creating and persisting vector store ---")
-    db = Chroma.from_documents(
-        docs, embeddings, persist_directory=persistent_directory)
+    db = Chroma.from_documents(docs, embeddings, persist_directory=persistent_directory)
     print("\n--- Finished creating and persisting vector store for this file ---")

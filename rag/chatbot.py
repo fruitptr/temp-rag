@@ -13,6 +13,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 # Load environment variables from .env
 
+
 def initialize_chatbot(filename):
     load_dotenv()
 
@@ -21,7 +22,7 @@ def initialize_chatbot(filename):
     db_dir = os.path.join(current_dir, "db", "chroma_db_with_metadata")
 
     # Define the filename to search for
-      # Replace this with the actual filename from the request
+    # Replace this with the actual filename from the request
     file_specific_directory = os.path.join(db_dir, filename.replace(".pdf", ""))
 
     # Define the embedding model
@@ -30,7 +31,9 @@ def initialize_chatbot(filename):
     # Load the specific vector store for the given file
     if os.path.exists(file_specific_directory):
         print(f"Loading vector store for {filename}...")
-        db = Chroma(persist_directory=file_specific_directory, embedding_function=embeddings)
+        db = Chroma(
+            persist_directory=file_specific_directory, embedding_function=embeddings
+        )
     else:
         raise FileNotFoundError(f"The vector store for {filename} does not exist.")
 
@@ -67,8 +70,7 @@ def initialize_chatbot(filename):
     )
 
     # Answer question prompt
-    qa_system_prompt = (
-        """You are a helpful assistant. Use the following pieces of retrieved context to answer the question. Don't use 
+    qa_system_prompt = """You are a helpful assistant. Use the following pieces of retrieved context to answer the question. Don't use 
         information other than the retrieved context. Make sure to answer the question in a way that the user doesn't gets confused.
         Your job is to be as helpful as possible. If relevant documents are not found or if the answer is not available in the
         retrieved context, just say that "I could not find a relevant answer in the selected PDF. Can you rephrase the question
@@ -81,7 +83,6 @@ def initialize_chatbot(filename):
 
         ===Explain to a 5-year-old===
         [Explain the answer in simple terms here.]"""
-    )
 
     # Create a prompt template for answering questions
     qa_prompt = ChatPromptTemplate.from_messages(
@@ -99,9 +100,11 @@ def initialize_chatbot(filename):
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     return rag_chain, retriever
 
+
 def process_query(query, chat_history, rag_chain):
     result = rag_chain.invoke({"input": query, "chat_history": chat_history})
     return result["answer"]
+
 
 # Function to simulate a continual chat
 def continual_chat(query, filename, chat_history):
