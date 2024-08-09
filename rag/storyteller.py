@@ -33,7 +33,8 @@ def storyteller(characterList, plot, categoryList, languageCode, isRandom):
             All the information about the charaters is right here: {characterList}, the plot of the story will be {plot}, the 
             category list is as follows {categoryList}. 
 
-            Note: Write the story in this language: {languageCode} and don't include ``` json ``` in the output
+            Note: Keep the words simple and not too difficult. Write the story in this language: {languageCode} and don't
+            include ``` json ``` in the output
 
             You must output the result in a JSON format. An example output is provided below. Don't return anything other than the JSON.\n\n"
             {example}
@@ -49,7 +50,8 @@ def storyteller(characterList, plot, categoryList, languageCode, isRandom):
         combined_input = """
             You are the best story teller in the world. Your task is to generate an interesting story.
 
-            Note: Write the story in this language: {languageCode} and don't include ``` json ``` in the output
+            Note: Keep the words simple and not too difficult. Write the story in this language: {languageCode} and don't 
+            include ``` json ``` in the output
 
             You must output the result in a JSON format. An example output is provided below. Don't return anything other than the JSON.
 
