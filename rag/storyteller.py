@@ -32,6 +32,12 @@ def storyteller(characterList, plot, categoryList, languageCode, isRandom):
             You are the best story teller in the world. Your task is to generate a story by using the information provided to you. 
             All the information about the charaters is right here: {characterList}, the plot of the story will be {plot}, the 
             category list is as follows {categoryList}. 
+            
+            Tips: 
+
+            1- Don't simple use the exact words given to you in the input. Try to be creative and make the story interesting.
+            2- Make sure the story is coherent and has a clear beginning, middle and end.
+            3- The story should be not be very short or very long. Try to keep it between 100-200 words.
 
             Note: Keep the words simple and not too difficult. Write the story in this language: {languageCode} and don't
             include ``` json ``` in the output
