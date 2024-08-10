@@ -20,15 +20,13 @@ def transcribe_video(youtubelink):
         # print("Audio File downloaded in MP3")
 
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': 'audio.mp3',
-            'ratelimit': '100K',  # Limit download speed to 100KB/s
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',  # Set a common user-agent
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'audio',
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

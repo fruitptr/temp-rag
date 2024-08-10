@@ -85,7 +85,8 @@ def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 class EvaluateRequest(BaseModel):
-    filename: str
+    filename: Optional[str] = None
+    text: Optional[str] = None
     originalQuizJson: dict
     userAnswerQuizJson: dict
 
@@ -142,7 +143,10 @@ def query_llm(prompt):
 @app.post('/evaluate')
 def evaluate_quiz(request: EvaluateRequest):
     try:
-        context = get_context_from_chroma(request.filename, request.originalQuizJson)
+        if request.filename:
+            context = get_context_from_chroma(request.filename, request.originalQuizJson)
+        else:
+            context = request.text
         
         prompt = f"""
         Context: {context}
