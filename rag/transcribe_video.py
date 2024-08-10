@@ -10,7 +10,7 @@ def transcribe_video(youtubelink):
     print("Video to audio...")
     # Convert Youtube video to audio
     try:
-        video = YouTube(youtubelink)
+        video = YouTube(youtubelink, use_oauth=True, allow_oauth_cache=True)
         print("video object", video)
         print("video streams", video.streams)
         stream = video.streams.filter(only_audio=True).first()
