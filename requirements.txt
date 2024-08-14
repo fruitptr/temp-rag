@@ -18,5 +18,5 @@ pymupdf==1.24.7
 fastapi==0.111.1
 pydantic==2.8.2
 uvicorn==0.30.3
-yt-dlp
+youtube-transcript-api==0.6.2
 pysqlite3-binary
